@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medidor de Notas de Corte - Universidad de La Rioja</title>
+    <style>
+        :root {
+            --primary: #c41230; /* Color corporativo aproximado de la UR */
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-dark: #333333;
+            --text-muted: #666666;
+        }
+
+        body {
+            font-family: 'PPLL Vocento' Semibold, serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            color: var(--primary);
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+        }
+
+        .slider-container {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .nota-display {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 10px 0;
+            transition: color 0.3s ease;
+        }
+
+        /* Estilos del control deslizante (la línea) */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            margin: 10px 0;
+            background: var(--primary);
+            opacity: 90%;
+         
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #ddd;
+            border-radius: 4px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:active {
+            transform: scale(1.15);
+        }
+
+        .results-header {
+            font-size: 1.1rem;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .carreras-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .carreras-list li {
+            background: var(--bg-color);
+            margin-bottom: 10px;
+            padding: 12px 15px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+            border-left: 4px solid var(--primary);
+        }
+
+        .carrera-nombre {
+            font-weight: 600;
+        }
+
+        .carrera-nota {
+            background: var(--primary);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            font-style: italic;
+            padding: 20px 0;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Medidor de Acceso</h1>
+        <p class="subtitle">Desliza la línea para ver las notas de corte de carreras de la Universidad de La Rioja.</p>
+
+        <div class="slider-container">
+            <div class="nota-display" id="nota-actual">5.00</div>
+            <input type="range" id="nota-slider" min="5" max="14" step="0.01" value="5">
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #999;">
+                <span>Aprobado (5)</span>
+                <span>Excelente (14)</span>
+            </div>
+        </div>
+
+        <div class="results-header">
+            <strong>Carreras accesibles: <span id="contador-carreras">0</span></strong>
+        </div>
+        
+        <ul class="carreras-list" id="lista-carreras">
+            </ul>
+    </div>
+
+    <script>
+        // Datos orientativos de la Universidad de La Rioja
+        const carrerasUR = [
+            { nombre: "Matemáticas", nota: 11.384 },
+            { nombre: "Enfermería", nota: 11.969},
+            { nombre: "Derecho", nota: 8.749 },
+            { nombre: "Química", nota: 7.884 },
+            { nombre: "Ingeniería Informática", nota: 7.83 },
+            { nombre: "Educación Primaria", nota: 8.077 },
+            { nombre: "Educación Infantil", nota: 7.951 },
+            { nombre: "Ingeniería Electrónica Industrial", nota: 7.65 },
+            { nombre: "Trabajo Social", nota: 5.00 },
+            { nombre: "Administración y Dirección de Empresas (ADE)", nota: 5.00 },
+            { nombre: "Enología", nota: 5.00 },
+            { nombre: "Turismo", nota: 5.00 },
+            { nombre: "Estudios Ingleses", nota: 5.00 },
+            { nombre: "Geografía e Historia", nota: 5.00 },
+            { nombre: "Lengua y Literatura Hispánica", nota: 5.00 },
+            { nombre: "Ingeniería Agrícola", nota: 5.00 },
+            { nombre: "Ingeniería Mecánica", nota: 5.914 }
+        ];
+
+        // Referencias al DOM
+        const slider = document.getElementById('nota-slider');
+        const displayNota = document.getElementById('nota-actual');
+        const listaCarreras = document.getElementById('lista-carreras');
+        const contadorCarreras = document.getElementById('contador-carreras');
+
+        // Función principal de filtrado
+        function actualizarMedidor() {
+            // Obtenemos el valor actual del slider
+            const notaEstudiante = parseFloat(slider.value);
+            displayNota.textContent = notaEstudiante.toFixed(2);
+
+            // Limpiamos la lista actual
+            listaCarreras.innerHTML = '';
+
+            // Filtramos las carreras donde la nota de corte es menor o igual a la del estudiante
+            const accesibles = carrerasUR.filter(carrera => notaEstudiante >= carrera.nota);
+
+            // Ordenamos de mayor a menor dificultad para que destaquen arriba
+            accesibles.sort((a, b) => b.nota - a.nota);
+
+            // Actualizamos el contador
+            contadorCarreras.textContent = accesibles.length;
+
+            // Renderizamos los resultados en el DOM
+            if (accesibles.length === 0) {
+                listaCarreras.innerHTML = '<div class="empty-state">No hay carreras accesibles con esta nota.</div>';
+            } else {
+                accesibles.forEach(carrera => {
+                    const li = document.createElement('li');
+                    
+                    const spanNombre = document.createElement('span');
+                    spanNombre.className = 'carrera-nombre';
+                    spanNombre.textContent = carrera.nombre;
+
+                    const spanNota = document.createElement('span');
+                    spanNota.className = 'carrera-nota';
+                    spanNota.textContent = carrera.nota.toFixed(2);
+
+                    li.appendChild(spanNombre);
+                    li.appendChild(spanNota);
+                    listaCarreras.appendChild(li);
+                });
+            }
+        }
+
+        // Escuchamos el evento de input en tiempo real (mientras desliza)
+        slider.addEventListener('input', actualizarMedidor);
+
+        // Inicializamos la vista por primera vez
+        actualizarMedidor();
+    </script>
+</body>
+</html>
